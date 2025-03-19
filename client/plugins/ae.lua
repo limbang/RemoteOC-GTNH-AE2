@@ -198,15 +198,19 @@ function ae.requestItem(name, damage, amount, cpuName, label)
 
     local res = {
         item = craftable.getItemStack(),
-        failed = result.hasFailed() or false,
-        computing = result.isComputing() or false,
+        failed = result.hasFailed and result.hasFailed() or false,
+        computing = result.isComputing and result.isComputing() or false,
         done = { result = false, why = nil },
         canceled = { result = false, why = nil }
     }
 
-    res.done.result, res.done.why = result.isDone()
-    res.canceled.result, res.canceled.why = result.isCanceled()
+    if result.isDone then
+        res.done.result, res.done.why = result.isDone()
+    end
 
+    if result.isCanceled then
+        res.canceled.result, res.canceled.why = result.isCanceled()
+    end
     return { message = "success", data = res }
 end
 
@@ -224,8 +228,28 @@ function ae.getAllSilempleItems(filter)
     end
     return { message = "success", data = newOne}
 end
-
-function ae.getAllItems(filter)
+/*
+* "return ae.getAllItems({{name=\"minecraft:glass\"}, {name=\"minecraft:stone\"}, {name=\"minecraft:diamond\"}})"
+*/
+function ae.getAllItems(filters)
+    -- 获取多个物品信息
+    local allItems = {}
+    if filters and #filters > 0 then
+        for _, filter in ipairs(filters) do
+            local items = me.getItemsInNetwork(filter)
+            if items and #items > 0 then
+                for _, item in ipairs(items) do
+                    table.insert(allItems, item)
+                end
+            end
+        end
+    end
+    return { message = "success", data = parseItem(allItems) }
+end
+/*
+* "return ae.getSingleItems({name=\"minecraft:glass\"})"
+*/
+function ae.getSingleItems(filter)
     -- 获取所有物品信息
     local items = me.getItemsInNetwork(filter)
     return { message = "success", data = parseItem(items) }
